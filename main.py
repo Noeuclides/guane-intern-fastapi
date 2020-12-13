@@ -49,7 +49,19 @@ def get_db():
 #     query = dogs.select().where(dogs.c.name == name)
 #     return await database.fetch_one(query)
 
-
+def create_user(db: Session, user: schemas.UserCreate):
+    fake_hashed_password = user.password + "notreallyhashed"
+    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+@app.post("/users/", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return crud.create_user(db=db, user=user)
 @app.post('/api/dogs/{name}', response_model=DogsList)
 async def create_dog(name: str, adopted: bool):
     gID = str(uuid.uuid1())
