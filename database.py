@@ -1,7 +1,6 @@
 
 import os
 import urllib
-import databases
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -27,7 +26,6 @@ DATABASE_URL = 'postgresql://{}:{}@{}:{}/{}?sslmode={}'.format(
 )
 print(DATABASE_URL)
 
-database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
 engine = sqlalchemy.create_engine(
@@ -37,4 +35,4 @@ engine = sqlalchemy.create_engine(
 metadata.create_all(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+

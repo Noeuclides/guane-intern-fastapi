@@ -1,20 +1,28 @@
+import os
 import requests
 import uuid
 from datetime import datetime as dt
 from typing import List, Optional
 from fastapi import FastAPI, Depends
+from fastapi_sqlalchemy import DBSessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 from schemas import *
 from models import Base, Dog, User
 from database import SessionLocal, engine
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
+
+app.add_middleware(DBSessionMiddleware,
+                   db_url=os.environ["DATABASE_URL"])
 
 # Dependency
 
