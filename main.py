@@ -20,7 +20,7 @@ Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
-
+print(os.environ["DATABASE_URL"])
 app.add_middleware(DBSessionMiddleware,
                    db_url=os.environ["DATABASE_URL"])
 
