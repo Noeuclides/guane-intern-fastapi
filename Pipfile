@@ -11,6 +11,8 @@ alembic = "*"
 uvicorn = "*"
 python-dotenv = "*"
 psycopg2 = "*"
+requests = "*"
+passlib = "*"
 
 [dev-packages]
 
