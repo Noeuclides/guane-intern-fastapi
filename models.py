@@ -1,23 +1,25 @@
-from pydantic import BaseModel, Field
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy.orm import relationship
+
+from database import Base
 
 
-# Models
-class DogsList(BaseModel):
-    id: str
-    name: str
-    picture: str
-    create_date: str
-    is_adopted: bool
+class User(Base):
+    __tablename__ = 'user'
+    id = Column(String, primary_key=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    username = Column(String, unique=True)
+    email = Column(String, unique=True)
+    create_date = Column(String)
+    dog = relationship("Dog", backref="user")
 
 
-# class DogEntry(BaseModel):
-#     name: str = Field(..., example="Lazy")
-#     is_adopted: bool = Field(..., example=True)
-
-
-# class DogUpdate(BaseModel):
-#     name: str = Field(..., example="Enter_your_dog_name")
-#     is_adopted: bool = Field(..., example=True)
-
-class DogDelete(BaseModel):
-    name: str
+class Dog(Base):
+    __tablename__ = 'dogs'
+    id = Column(String, primary_key=True)
+    name = Column(String, unique=True)
+    picture = Column(String)
+    create_date = Column(String)
+    is_adopted = Column(Boolean)
+    user_id = Column(String, ForeignKey('user.id'), nullable=True)

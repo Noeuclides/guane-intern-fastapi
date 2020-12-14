@@ -1,93 +1,182 @@
 import requests
 import uuid
 from datetime import datetime as dt
-from typing import List
-from fastapi import FastAPI
+from typing import List, Optional
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
-from models import DogsList, DogDelete
-from db import database, dogs
+from schemas import *
+from models import Base, Dog, User
+from database import SessionLocal, engine
+from sqlalchemy.orm import Session
 
 
+Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
 
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
+# Dependency
 
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @app.get('/api/dogs', response_model=List[DogsList])
-async def get_dogs():
-    query = dogs.select()
-    return await database.fetch_all(query)
+async def get_dogs(db: Session=Depends(get_db)):
+    return db.query(Dog).all()
 
 
 @app.get('/api/dogs/is_adopted', response_model=List[DogsList])
-async def get_adopted():
-    query = dogs.select().where(dogs.c.is_adopted)
-    return await database.fetch_all(query)
+async def get_adopted(db: Session=Depends(get_db)):
+    return db.query(Dog).filter(Dog.is_adopted).all()
 
 
 @app.get('/api/dogs/{name}', response_model=DogsList)
-async def get_dog(name: str):
-    query = dogs.select().where(dogs.c.name == name)
-    return await database.fetch_one(query)
+async def get_dog(name: str, db: Session=Depends(get_db)):
+    return db.query(Dog).filter(Dog.name == name).first()
 
 
-@app.post('/api/dogs/{name}', response_model=DogsList)
-async def create_dog(name: str, adopted: bool):
+@app.post('/api/dogs/{name}', response_model=DogInfo)
+async def create_dog(
+    name: str,
+    owner_id: Optional[str]=None,
+    db: Session=Depends(get_db)
+):
     gID = str(uuid.uuid1())
     gDate = str(dt.now())
-
+    if not owner_id:
+        adopted = False
+    else:
+        adopted = True
     # getting random image in dog ceo API
     response = requests.get('https://dog.ceo/api/breeds/image/random').json()
     dog_image_url = response['message']
-
-    query = dogs.insert().values(
+    db_dog = Dog(
         id=gID,
         name=name,
         picture=dog_image_url,
         create_date=gDate,
-        is_adopted=adopted
+        is_adopted=adopted,
+        user_id=owner_id
     )
-    await database.execute(query)
-    return {
-        "id": gID,
-        "name": name,
-        "picture": dog_image_url,
-        "create_date": gDate,
-        "is_adopted": adopted
+    db.add(db_dog)
+    db.commit()
+    db.refresh(db_dog)
+    user = db.query(User).filter(User.id == owner_id).first()
+    if user:
+        user_info = {
+            "user_id": user.id,
+            "user_first_name": user.first_name,
+            "user_last_name": user.last_name,
+            "user_username": user.username
+        }
+    else:
+        user_info = {
+            "user_id": None,
+            "user_first_name": None,
+            "user_last_name": None,
+            "user_username": None
+        }
+    dog_info = {
+        "id": db_dog.id,
+        "name": db_dog.name,
+        "picture": db_dog.picture,
+        "create_date": db_dog.create_date,
+        "is_adopted": db_dog.is_adopted,
     }
+    dog_info.update(user_info)
+
+    return dog_info
 
 
 @app.put('/api/dogs/{name}', response_model=DogsList)
-async def update_dog(name: str, adopted: bool):
+async def update_dog(
+    name: str,
+    owner_id: Optional[str]=None,
+    db: Session=Depends(get_db)
+):
     gDate = str(dt.now())
-    query = dogs.update().where(dogs.c.name == name).values(
-        name=name,
-        is_adopted=adopted,
-        create_date=gDate
-    )
-    await database.execute(query)
+    if owner_id:
+        adopted = True
+    else:
+        adopted = False
 
-    return await get_dog(name)
+    db.query(Dog).filter(Dog.name == name).update(
+        {
+            Dog.is_adopted: adopted,
+            Dog.create_date: gDate,
+            Dog.user_id: owner_id
+        }, synchronize_session=False
+    )
+    db.commit()
+    return db.query(Dog).filter(Dog.name == name).first()
 
 
 @app.delete('/api/dogs/{name}')
-async def delete_dog(dog: DogDelete):
-    query = dogs.delete().where(dogs.c.name == dog.name)
-    print(query)
-    await database.execute(query)
+def delete_dog(name: str, db: Session=Depends(get_db)):
+    dog = db.query(Dog).filter(Dog.name == name).first()
+    db.delete(dog)
+    db.commit()
 
     return {
         "status": True,
         "message": "This dog has been deleted successfully"
+    }
+
+
+@app.get('/api/users', response_model=List[UserList])
+def get_dogs(db: Session=Depends(get_db)):
+    return db.query(User).all()
+
+
+@app.post('/api/user/{name}', response_model=UserList)
+def create_user(user: UserInput, db: Session=Depends(get_db)):
+    gID = str(uuid.uuid1())
+    gDate = str(dt.now())
+
+    db_user = User(
+        id=gID,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        username=user.username,
+        email=user.email,
+        create_date=gDate,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db.query(User).filter(User.id == gID).first()
+
+
+@app.put('/api/user/{id}', response_model=UserList)
+def update_user(id: str, user: UserUpdate, db: Session=Depends(get_db)):
+    gDate = str(dt.now())
+
+    db.query(User).filter(User.id == id).update(
+        {
+            User.first_name: user.first_name,
+            User.last_name: user.last_name,
+            User.email: user.email,
+            User.create_date: gDate,
+        }, synchronize_session=False
+    )
+    db.commit()
+    return db.query(User).filter(User.id == id).first()
+
+
+@app.delete('/api/user/{id}')
+def delete_user(id: str, db: Session=Depends(get_db)):
+    user = db.query(User).filter(User.id == id).first()
+    db.delete(user)
+    db.commit()
+
+    return {
+        "status": True,
+        "message": "This user has been deleted successfully"
     }

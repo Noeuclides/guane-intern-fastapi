@@ -3,7 +3,8 @@ import os
 import urllib
 import databases
 import sqlalchemy
-
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 # configure database
 host_server = os.environ.get('host_server', 'localhost')
@@ -29,18 +30,11 @@ print(DATABASE_URL)
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
-dogs = sqlalchemy.Table(
-    "dogs",
-    metadata,
-    sqlalchemy.Column("id", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("name", sqlalchemy.String, unique=True),
-    sqlalchemy.Column("picture", sqlalchemy.String),
-    sqlalchemy.Column("create_date", sqlalchemy.String),
-    sqlalchemy.Column("is_adopted", sqlalchemy.Boolean),
-)
-
-
 engine = sqlalchemy.create_engine(
     DATABASE_URL
 )
+
 metadata.create_all(engine)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
