@@ -13,6 +13,7 @@ from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
@@ -20,7 +21,6 @@ Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
-print(os.environ["DATABASE_URL"])
 app.add_middleware(DBSessionMiddleware,
                    db_url=os.environ["DATABASE_URL"])
 
@@ -139,7 +139,7 @@ def delete_dog(name: str, db: Session=Depends(get_db)):
 
 
 @app.get('/api/users', response_model=List[UserList])
-def get_dogs(db: Session=Depends(get_db)):
+def get_users(db: Session=Depends(get_db)):
     return db.query(User).all()
 
 
