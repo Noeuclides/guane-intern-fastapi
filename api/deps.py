@@ -4,6 +4,7 @@ from api.database import SessionLocal
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 # Dependency
 def get_db():
     db = SessionLocal()

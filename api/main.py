@@ -32,7 +32,8 @@ def dog_api(db: Session=Depends(get_db)) -> Any:
     root endpoint describing the api
     """
     return {
-        "Dogs Api": "This is an API to create dogs with its owners go to /docs or /redoc to see the endpoints"
+        "Dogs Api": "This is an API to create dogs with its owners \
+            go to /docs or /redoc to see the endpoints"
     }
 
 

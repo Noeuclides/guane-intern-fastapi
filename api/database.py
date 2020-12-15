@@ -22,4 +22,3 @@ engine = sqlalchemy.create_engine(
 metadata.create_all(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
