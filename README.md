@@ -15,7 +15,7 @@ Simply run the following command
 ```sh
 $ sudo docker-compose up
 ```
-You will see something like this the first time you run that command, while docker build the container from the Dockerfile.
+You will see something like this the first time you run that command, while docker build the container from the Dockerfile (This process might take a while).
 ```sh
 Creating network "guane-intern-fastapi_default" with the default driver
 pulling db (postgres:11)...

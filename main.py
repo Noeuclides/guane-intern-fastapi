@@ -35,8 +35,15 @@ def get_db():
         db.close()
 
 
+@app.get('/')
+def dog_api(db: Session=Depends(get_db)):
+    return {
+        "Dogs Api": "This is an API to create dogs with its owners"
+    }
+
+
 @app.get('/api/dogs', response_model=List[DogsList])
-async def get_dogs(db: Session=Depends(get_db)):
+def get_dogs(db: Session=Depends(get_db)):
     return db.query(Dog).all()
 
 
