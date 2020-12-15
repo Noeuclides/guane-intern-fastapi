@@ -7,32 +7,21 @@ from fastapi import FastAPI, Depends
 from fastapi_sqlalchemy import DBSessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
-from schemas import *
-from models import Base, Dog, User
-from database import SessionLocal, engine
+from api.schemas import *
+from api.models import Base, Dog, User
+from api.database import SessionLocal, engine
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-
+from .deps import get_db, pwd_context
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 Base.metadata.create_all(bind=engine)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
 app.add_middleware(DBSessionMiddleware,
                    db_url=os.environ["DATABASE_URL"])
-
-# Dependency
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @app.get('/')
