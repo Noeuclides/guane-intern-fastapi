@@ -1,18 +1,20 @@
 import os
 import requests
 import uuid
+
 from datetime import datetime as dt
-from typing import List, Optional
-from fastapi import FastAPI, Depends
+from typing import List, Optional, Any
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi_sqlalchemy import DBSessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+from dotenv import load_dotenv
+
 from api.schemas import *
 from api.models import Base, Dog, User
 from api.database import SessionLocal, engine
-from sqlalchemy.orm import Session
-from dotenv import load_dotenv
 from .deps import get_db, pwd_context
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -25,33 +27,51 @@ app.add_middleware(DBSessionMiddleware,
 
 
 @app.get('/')
-def dog_api(db: Session=Depends(get_db)):
+def dog_api(db: Session=Depends(get_db)) -> Any:
+    """
+    root endpoint describing the api
+    """
     return {
         "Dogs Api": "This is an API to create dogs with its owners go to /docs or /redoc to see the endpoints"
     }
 
 
 @app.get('/api/dogs', response_model=List[DogsList])
-def get_dogs(db: Session=Depends(get_db)):
+def get_dogs(db: Session=Depends(get_db)) -> Any:
+    """
+    Retrieve all dogs
+    """
     return db.query(Dog).all()
 
 
 @app.get('/api/dogs/is_adopted', response_model=List[DogsList])
-async def get_adopted(db: Session=Depends(get_db)):
+def get_adopted(db: Session=Depends(get_db)) -> Any:
+    """
+    Retrieve all dogs that are adopted
+    """
     return db.query(Dog).filter(Dog.is_adopted).all()
 
 
 @app.get('/api/dogs/{name}', response_model=DogsList)
-async def get_dog(name: str, db: Session=Depends(get_db)):
-    return db.query(Dog).filter(Dog.name == name).first()
+def get_dog(name: str, db: Session=Depends(get_db)) -> Any:
+    """
+    Get dog by its name
+    """
+    dog = db.query(Dog).filter(Dog.name == name).first()
+    if not dog:
+        raise HTTPException(status_code=404, detail="Dog does not exists")
+    return dog
 
 
 @app.post('/api/dogs/{name}', response_model=DogInfo)
-async def create_dog(
+def create_dog(
     name: str,
     owner_id: Optional[str]=None,
     db: Session=Depends(get_db)
-):
+) -> Any:
+    """
+    Create a new dog
+    """
     gID = str(uuid.uuid1())
     gDate = str(dt.now())
     if not owner_id:
@@ -100,11 +120,17 @@ async def create_dog(
 
 
 @app.put('/api/dogs/{name}', response_model=DogsList)
-async def update_dog(
+def update_dog(
     name: str,
     owner_id: Optional[str]=None,
     db: Session=Depends(get_db)
-):
+) -> Any:
+    """
+    Updated dog
+    """
+    dog = db.query(Dog).filter(Dog.name == name).first()
+    if not dog:
+        raise HTTPException(status_code=404, detail="Dog does not exists")
     gDate = str(dt.now())
     if owner_id:
         adopted = True
@@ -123,8 +149,13 @@ async def update_dog(
 
 
 @app.delete('/api/dogs/{name}')
-def delete_dog(name: str, db: Session=Depends(get_db)):
+def delete_dog(name: str, db: Session=Depends(get_db)) -> Any:
+    """
+    Delete dog
+    """
     dog = db.query(Dog).filter(Dog.name == name).first()
+    if not dog:
+        raise HTTPException(status_code=404, detail="Dog does not exists")
     db.delete(dog)
     db.commit()
 
@@ -135,12 +166,21 @@ def delete_dog(name: str, db: Session=Depends(get_db)):
 
 
 @app.get('/api/users', response_model=List[UserList])
-def get_users(db: Session=Depends(get_db)):
+def get_users(db: Session=Depends(get_db)) -> Any:
+    """
+    Retrieve all users
+    """
     return db.query(User).all()
 
 
-@app.post('/api/user/{name}', response_model=UserList)
-def create_user(user: UserInput, db: Session=Depends(get_db)):
+@app.post('/api/user', response_model=UserList)
+def create_user(
+        user: UserInput,
+        db: Session=Depends(get_db)
+) -> Any:
+    """
+    Create new user
+    """
     gID = str(uuid.uuid1())
     gDate = str(dt.now())
 
@@ -159,7 +199,17 @@ def create_user(user: UserInput, db: Session=Depends(get_db)):
 
 
 @app.put('/api/user/{id}', response_model=UserList)
-def update_user(id: str, user: UserUpdate, db: Session=Depends(get_db)):
+def update_user(
+        id: str,
+        user: UserUpdate,
+        db: Session=Depends(get_db)
+) -> Any:
+    """
+    Update user
+    """
+    username = db.query(User).filter(User.id == id).first()
+    if not username:
+        raise HTTPException(status_code=404, detail="User does not exists")
     gDate = str(dt.now())
 
     db.query(User).filter(User.id == id).update(
@@ -175,8 +225,13 @@ def update_user(id: str, user: UserUpdate, db: Session=Depends(get_db)):
 
 
 @app.delete('/api/user/{id}')
-def delete_user(id: str, db: Session=Depends(get_db)):
+def delete_user(id: str, db: Session=Depends(get_db)) -> Any:
+    """
+    Delete user
+    """
     user = db.query(User).filter(User.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User does not exists")
     db.delete(user)
     db.commit()
 
