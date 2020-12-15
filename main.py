@@ -38,7 +38,7 @@ def get_db():
 @app.get('/')
 def dog_api(db: Session=Depends(get_db)):
     return {
-        "Dogs Api": "This is an API to create dogs with its owners"
+        "Dogs Api": "This is an API to create dogs with its owners go to /docs or /redoc to see the endpoints"
     }
 
 

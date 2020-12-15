@@ -32,5 +32,5 @@ web_1     | INFO:     Waiting for application startup.
 web_1     | INFO:     Application startup complete.
 ```
 
-Then, go to your browser and write "http://127.0.0.1:8000/docs", to view the endpoints available, and create, edit, get, and delete entities.
+Then, go to your browser and write "http://127.0.0.1:8000/docs", to view the endpoints available, and create, edit, get, and delete entities. Or go to "http://127.0.0.1:8000/redoc" to see the documentation.
 
