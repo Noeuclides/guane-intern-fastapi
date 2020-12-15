@@ -9,6 +9,12 @@ $ sudo apt-get install docker.io
 $ sudo apt-get install docker-compose
 ```
 
+Make sure that the port 5432 is not being listened
+```sh
+$ sudo lsof -i :5432
+$ kill <PID>
+```
+
 ## Run the App
 
 Simply run the following command
