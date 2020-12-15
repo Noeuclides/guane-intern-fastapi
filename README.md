@@ -12,6 +12,7 @@ $ sudo apt-get install docker-compose
 Make sure that the port 5432 is not being listened
 ```sh
 $ sudo lsof -i :5432
+#if there is a current process in that port then:
 $ kill <PID>
 ```
 
