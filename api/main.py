@@ -1,8 +1,5 @@
 import os
-import requests
-import uuid
 
-from datetime import datetime as dt
 from typing import List, Optional, Any
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi_sqlalchemy import DBSessionMiddleware
@@ -14,6 +11,7 @@ from api.schemas import *
 from api.models import Base, Dog, User
 from api.database import SessionLocal, engine
 from .deps import get_db, pwd_context
+from .utils import *
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,8 +30,7 @@ def dog_api(db: Session=Depends(get_db)) -> Any:
     root endpoint describing the api
     """
     return {
-        "Dogs Api": "This is an API to create dogs with its owners \
-            go to /docs or /redoc to see the endpoints"
+        "DogsAPI": "This is an API to create dogs with its owners go to /docs or /redoc to see the endpoints"
     }
 
 
@@ -73,23 +70,7 @@ def create_dog(
     """
     Create a new dog
     """
-    gID = str(uuid.uuid1())
-    gDate = str(dt.now())
-    if not owner_id:
-        adopted = False
-    else:
-        adopted = True
-    # getting random image in dog ceo API
-    response = requests.get('https://dog.ceo/api/breeds/image/random').json()
-    dog_image_url = response['message']
-    db_dog = Dog(
-        id=gID,
-        name=name,
-        picture=dog_image_url,
-        create_date=gDate,
-        is_adopted=adopted,
-        user_id=owner_id
-    )
+    db_dog = dog_creation(name, owner_id)
     db.add(db_dog)
     db.commit()
     db.refresh(db_dog)
@@ -132,18 +113,10 @@ def update_dog(
     dog = db.query(Dog).filter(Dog.name == name).first()
     if not dog:
         raise HTTPException(status_code=404, detail="Dog does not exists")
-    gDate = str(dt.now())
-    if owner_id:
-        adopted = True
-    else:
-        adopted = False
 
     db.query(Dog).filter(Dog.name == name).update(
-        {
-            Dog.is_adopted: adopted,
-            Dog.create_date: gDate,
-            Dog.user_id: owner_id
-        }, synchronize_session=False
+        dog_update_entity(owner_id),
+        synchronize_session=False
     )
     db.commit()
     return db.query(Dog).filter(Dog.name == name).first()
@@ -182,21 +155,14 @@ def create_user(
     """
     Create new user
     """
-    gID = str(uuid.uuid1())
-    gDate = str(dt.now())
-
-    db_user = User(
-        id=gID,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        username=user.username,
-        email=user.email,
-        create_date=gDate,
-    )
+    username = db.query(User).filter(User.username == user.username).first()
+    if username:
+        raise HTTPException(status_code=404, detail="User already exists")
+    db_user = user_creation(user)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db.query(User).filter(User.id == gID).first()
+    return db.query(User).filter(User.id == db_user.id).first()
 
 
 @app.put('/api/user/{id}', response_model=UserList)
@@ -211,15 +177,10 @@ def update_user(
     username = db.query(User).filter(User.id == id).first()
     if not username:
         raise HTTPException(status_code=404, detail="User does not exists")
-    gDate = str(dt.now())
 
     db.query(User).filter(User.id == id).update(
-        {
-            User.first_name: user.first_name,
-            User.last_name: user.last_name,
-            User.email: user.email,
-            User.create_date: gDate,
-        }, synchronize_session=False
+        user_update_entity(user),
+        synchronize_session=False
     )
     db.commit()
     return db.query(User).filter(User.id == id).first()
