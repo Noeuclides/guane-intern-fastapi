@@ -11,7 +11,7 @@ def dog_creation(name: str, owner_id: Optional[str]=None) -> Dog:
     """
     Method to create a dog instance
     """
-    gID = str(uuid.uuid1())		
+    gID = str(uuid.uuid1())
     gDate = str(dt.now())
     if not owner_id:
         adopted = False
@@ -63,13 +63,13 @@ def dog_update_entity(owner_id: Optional[str]=None) -> Dict:
         adopted = True
     else:
         adopted = False
-        
+
     return {
         Dog.is_adopted: adopted,
         Dog.create_date: gDate,
         Dog.user_id: owner_id
     }
-        
+
 
 def user_creation(user: UserInput) -> User:
     """
@@ -94,7 +94,7 @@ def user_update_entity(user: UserUpdate) -> Dict:
     method to obtain a dictionary with the user to update
     """
     gDate = str(dt.now())
-        
+
     return {
         User.first_name: user.first_name,
         User.last_name: user.last_name,

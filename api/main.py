@@ -30,7 +30,8 @@ def dog_api(db: Session=Depends(get_db)) -> Any:
     root endpoint describing the api
     """
     return {
-        "DogsAPI": "This is an API to create dogs with its owners go to /docs or /redoc to see the endpoints"
+        "DogsAPI": "This is an API to create dogs with its owners.",
+        "documentation": "go to /docs or /redoc to see the endpoints."
     }
 
 
@@ -76,7 +77,7 @@ def create_dog(
     if owner_id:
         user = db.query(User).filter(User.id == owner_id).first()
         if not user:
-            raise HTTPException(status_code=404, detail="Owner does not exists")
+            raise HTTPException(status_code=404, detail="Owner doesn't exists")
     db_dog = dog_creation(name, owner_id)
     db.add(db_dog)
     db.commit()
