@@ -70,25 +70,20 @@ def create_dog(
     """
     Create a new dog
     """
+    dog = db.query(Dog).filter(Dog.name == name).first()
+    if dog:
+        raise HTTPException(status_code=404, detail="Dog already exists")
+    if owner_id:
+        user = db.query(User).filter(User.id == owner_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Owner does not exists")
     db_dog = dog_creation(name, owner_id)
     db.add(db_dog)
     db.commit()
     db.refresh(db_dog)
     user = db.query(User).filter(User.id == owner_id).first()
-    if user:
-        user_info = {
-            "user_id": user.id,
-            "user_first_name": user.first_name,
-            "user_last_name": user.last_name,
-            "user_username": user.username
-        }
-    else:
-        user_info = {
-            "user_id": None,
-            "user_first_name": None,
-            "user_last_name": None,
-            "user_username": None
-        }
+    user_info = dog_user_entity(user)
+
     dog_info = {
         "id": db_dog.id,
         "name": db_dog.name,

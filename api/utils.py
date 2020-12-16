@@ -32,6 +32,28 @@ def dog_creation(name: str, owner_id: Optional[str]=None) -> Dog:
     return db_dog
 
 
+def dog_user_entity(user: User) -> Dict:
+    """
+    method to obtain a dictionary with the info of the dogs owner
+    """
+    if user:
+        user_info = {
+            "user_id": user.id,
+            "user_first_name": user.first_name,
+            "user_last_name": user.last_name,
+            "user_username": user.username
+        }
+    else:
+        user_info = {
+            "user_id": None,
+            "user_first_name": None,
+            "user_last_name": None,
+            "user_username": None
+        }
+
+    return user_info
+
+
 def dog_update_entity(owner_id: Optional[str]=None) -> Dict:
     """
     method to obtain a dictionary with the dog to update
